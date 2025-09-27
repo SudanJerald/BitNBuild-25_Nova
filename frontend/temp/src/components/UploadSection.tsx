@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { useState, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { DatabaseAPI } from "../utils/supabase/client";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 
 const sampleTransactions = [
   { category: "💰 Salary", amount: "₹75,000", icon: "💰", type: "income" },
@@ -78,7 +78,7 @@ export function UploadSection() {
         setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
         
         try {
-          const response = await DatabaseAPI.uploadFile(user.id, file, session.access_token);
+          const response = await DatabaseAPI.uploadFile(user.id, file, 'document', session.access_token);
           
           // Simulate progress updates
           const progressInterval = setInterval(() => {

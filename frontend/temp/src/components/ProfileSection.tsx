@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { User, CreditCard, Building, FileText, Bell, Link, CheckCircle2, Plus, Download, Loader2, AlertCircle, X, Upload, Clock, Filter, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
 import { DatabaseAPI } from "../utils/supabase/client";
@@ -26,8 +26,10 @@ interface SavedReport {
 interface LinkedAccount {
   id: string;
   bank: string;
+  bankName: string;
   account: string;
   type: string;
+  accountType: string;
   status: 'connected' | 'pending' | 'failed';
   icon: any;
   balance?: string;
@@ -846,7 +848,7 @@ function ConnectAccountForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="bank">Select Bank</Label>
-        <Select onValueChange={(value) => setFormData(prev => ({ ...prev, bankName: value }))}>
+        <Select onValueChange={(value: string) => setFormData(prev => ({ ...prev, bankName: value }))}>
           <SelectTrigger>
             <SelectValue placeholder="Choose your bank" />
           </SelectTrigger>
@@ -862,7 +864,7 @@ function ConnectAccountForm({
 
       <div className="space-y-2">
         <Label htmlFor="accountType">Account Type</Label>
-        <Select onValueChange={(value) => setFormData(prev => ({ ...prev, accountType: value }))}>
+        <Select onValueChange={(value: string) => setFormData(prev => ({ ...prev, accountType: value }))}>
           <SelectTrigger>
             <SelectValue placeholder="Select account type" />
           </SelectTrigger>

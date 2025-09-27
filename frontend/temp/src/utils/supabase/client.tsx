@@ -8,73 +8,25 @@ export const supabase = createClient(
 )
 
 // API helper functions - Connect to your Flask backend
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000'
 
+// API Configuration
+export const API_CONFIG = {
+  BASE_URL: API_BASE_URL,
+  getAuthHeaders: (accessToken?: string) => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${accessToken || publicAnonKey}`
+  })
+}
+
+// Simplified API helper class - Non-auth methods only
 export class DatabaseAPI {
-  private static getAuthHeaders(accessToken?: string) {
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken || publicAnonKey}`
-    }
-  }
-
-  // Auth methods - Updated for Flask backend
-  static async signUp(email: string, password: string, name: string, phone?: string, panNumber?: string) {
-    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify({ 
-        email, 
-        password, 
-        name,
-        phone,
-        pan_number: panNumber
-      })
-    })
-    
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Registration failed')
-    }
-    
-    return response.json()
-  }
-
-  static async signIn(email: string, password: string) {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify({ email, password })
-    })
-    
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Login failed')
-    }
-    
-    return response.json()
-  }
-
-  static async signOut(accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(accessToken),
-      body: JSON.stringify({ access_token: accessToken })
-    })
-    
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Logout failed')
-    }
-    
-    return response.json()
-  }
 
   // Profile methods - Updated for Flask backend
   static async getProfile(userId: string, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/auth/profile/${userId}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/profile/${userId}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(accessToken)
+      headers: API_CONFIG.getAuthHeaders(accessToken)
     })
     
     if (!response.ok) {
@@ -86,9 +38,9 @@ export class DatabaseAPI {
   }
 
   static async updateProfile(userId: string, profileData: any, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/auth/profile/${userId}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/profile/${userId}`, {
       method: 'PUT',
-      headers: this.getAuthHeaders(accessToken),
+      headers: API_CONFIG.getAuthHeaders(accessToken),
       body: JSON.stringify(profileData)
     })
     
@@ -102,9 +54,9 @@ export class DatabaseAPI {
 
   // Dashboard methods - New for TaxWise backend
   static async getDashboardOverview(userId: string, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/dashboard/overview/${userId}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/dashboard/overview/${userId}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(accessToken)
+      headers: API_CONFIG.getAuthHeaders(accessToken)
     })
     
     if (!response.ok) {
@@ -116,9 +68,9 @@ export class DatabaseAPI {
   }
 
   static async getChartData(userId: string, chartType: string, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/dashboard/charts/${userId}?type=${chartType}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/dashboard/charts/${userId}?type=${chartType}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(accessToken)
+      headers: API_CONFIG.getAuthHeaders(accessToken)
     })
     
     if (!response.ok) {
@@ -131,9 +83,9 @@ export class DatabaseAPI {
 
   // Health check method
   static async healthCheck() {
-    const response = await fetch(`${API_BASE_URL}/health`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/health`, {
       method: 'GET',
-      headers: this.getAuthHeaders()
+      headers: API_CONFIG.getAuthHeaders()
     })
     
     if (!response.ok) {
@@ -151,7 +103,7 @@ export class DatabaseAPI {
     formData.append('user_id', userId)
     formData.append('file_type', fileType) // 'bank_statement', 'credit_card', 'csv'
 
-    const response = await fetch(`${API_BASE_URL}/api/data/upload`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/data/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`
@@ -168,9 +120,9 @@ export class DatabaseAPI {
   }
 
   static async getUserTransactions(userId: string, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/data/transactions/${userId}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/data/transactions/${userId}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(accessToken)
+      headers: API_CONFIG.getAuthHeaders(accessToken)
     })
     
     if (!response.ok) {
@@ -182,9 +134,9 @@ export class DatabaseAPI {
   }
 
   static async getFinancialData(userId: string, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/data/financial/${userId}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/data/financial/${userId}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(accessToken)
+      headers: API_CONFIG.getAuthHeaders(accessToken)
     })
     
     if (!response.ok) {
@@ -197,9 +149,9 @@ export class DatabaseAPI {
 
   // Tax calculation methods
   static async calculateTax(userId: string, taxData: any, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/tax/calculate/${userId}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/tax/calculate/${userId}`, {
       method: 'POST',
-      headers: this.getAuthHeaders(accessToken),
+      headers: API_CONFIG.getAuthHeaders(accessToken),
       body: JSON.stringify(taxData)
     })
     
@@ -212,9 +164,9 @@ export class DatabaseAPI {
   }
 
   static async getTaxOptimization(userId: string, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/tax/optimization/${userId}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/tax/optimization/${userId}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(accessToken)
+      headers: API_CONFIG.getAuthHeaders(accessToken)
     })
     
     if (!response.ok) {
@@ -227,9 +179,9 @@ export class DatabaseAPI {
 
   // CIBIL methods
   static async getCibilScore(userId: string, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/cibil/score/${userId}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/cibil/score/${userId}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(accessToken)
+      headers: API_CONFIG.getAuthHeaders(accessToken)
     })
     
     if (!response.ok) {
@@ -241,9 +193,9 @@ export class DatabaseAPI {
   }
 
   static async getCibilRecommendations(userId: string, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/cibil/recommendations/${userId}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/cibil/recommendations/${userId}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(accessToken)
+      headers: API_CONFIG.getAuthHeaders(accessToken)
     })
     
     if (!response.ok) {
@@ -256,9 +208,9 @@ export class DatabaseAPI {
 
   // Analytics and Insights methods  
   static async getSpendingAnalysis(userId: string, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/dashboard/charts/${userId}?type=spending`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/dashboard/charts/${userId}?type=spending`, {
       method: 'GET',
-      headers: this.getAuthHeaders(accessToken)
+      headers: API_CONFIG.getAuthHeaders(accessToken)
     })
     
     if (!response.ok) {
@@ -270,9 +222,9 @@ export class DatabaseAPI {
   }
 
   static async getIncomeAnalysis(userId: string, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/dashboard/charts/${userId}?type=income`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/dashboard/charts/${userId}?type=income`, {
       method: 'GET',
-      headers: this.getAuthHeaders(accessToken)
+      headers: API_CONFIG.getAuthHeaders(accessToken)
     })
     
     if (!response.ok) {
@@ -284,14 +236,130 @@ export class DatabaseAPI {
   }
 
   static async getTaxHistory(userId: string, accessToken: string) {
-    const response = await fetch(`${API_BASE_URL}/api/tax/history/${userId}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/tax/history/${userId}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(accessToken)
+      headers: API_CONFIG.getAuthHeaders(accessToken)
     })
     
     if (!response.ok) {
       const error = await response.json()
       throw new Error(error.error || 'Failed to fetch tax history')
+    }
+    
+    return response.json()
+  }
+
+  // Additional methods for ProfileSection and other components
+  static async getAccounts(userId: string, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/accounts/${userId}`, {
+      method: 'GET',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to fetch accounts')
+    }
+    
+    return response.json()
+  }
+
+  static async connectAccount(userId: string, accountData: any, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/accounts/connect`, {
+      method: 'POST',
+      headers: API_CONFIG.getAuthHeaders(accessToken),
+      body: JSON.stringify({ user_id: userId, ...accountData })
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to connect account')
+    }
+    
+    return response.json()
+  }
+
+  static async disconnectAccount(userId: string, accountId: string, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/accounts/${accountId}`, {
+      method: 'DELETE',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to disconnect account')
+    }
+    
+    return response.json()
+  }
+
+  static async getNotificationSettings(userId: string, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications/${userId}`, {
+      method: 'GET',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to fetch notification settings')
+    }
+    
+    return response.json()
+  }
+
+  static async updateNotificationSettings(userId: string, settings: any, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications/${userId}`, {
+      method: 'PUT',
+      headers: API_CONFIG.getAuthHeaders(accessToken),
+      body: JSON.stringify(settings)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to update notification settings')
+    }
+    
+    return response.json()
+  }
+
+  static async getReports(userId: string, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/reports/${userId}`, {
+      method: 'GET',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to fetch reports')
+    }
+    
+    return response.json()
+  }
+
+  static async saveReport(userId: string, reportData: any, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/reports`, {
+      method: 'POST',
+      headers: API_CONFIG.getAuthHeaders(accessToken),
+      body: JSON.stringify({ user_id: userId, ...reportData })
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to save report')
+    }
+    
+    return response.json()
+  }
+
+  static async getUserFiles(userId: string, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/files/${userId}`, {
+      method: 'GET',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to fetch user files')
     }
     
     return response.json()
