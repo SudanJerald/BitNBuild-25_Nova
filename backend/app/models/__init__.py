@@ -1,11 +1,12 @@
 from datetime import datetime
-from app import db
+from extensions import db
 
 class User(db.Model):
     """User model for authentication and profile management"""
     __tablename__ = 'users'
     
-    id = db.Column(db.Integer, primary_key=True)
+    # Use String for Supabase UUID, fallback to Integer for local SQLite
+    id = db.Column(db.String(36), primary_key=True)  # UUID from Supabase
     email = db.Column(db.String(120), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(15), nullable=True)
@@ -23,7 +24,7 @@ class FinancialData(db.Model):
     __tablename__ = 'financial_data'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     file_name = db.Column(db.String(255), nullable=False)
     file_type = db.Column(db.String(50), nullable=False)  # 'bank_statement', 'credit_card', 'csv'
     file_path = db.Column(db.String(500), nullable=False)
@@ -57,7 +58,7 @@ class TaxCalculation(db.Model):
     __tablename__ = 'tax_calculations'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     financial_year = db.Column(db.String(10), nullable=False)  # '2023-24'
     gross_income = db.Column(db.Float, nullable=False)
     total_deductions = db.Column(db.Float, default=0.0)
@@ -75,7 +76,7 @@ class CibilScore(db.Model):
     __tablename__ = 'cibil_scores'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     current_score = db.Column(db.Integer, nullable=True)
     predicted_score = db.Column(db.Integer, nullable=True)
     score_factors = db.Column(db.JSON)  # Factors affecting the score
@@ -100,7 +101,7 @@ class UserDeduction(db.Model):
     __tablename__ = 'user_deductions'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     tax_calculation_id = db.Column(db.Integer, db.ForeignKey('tax_calculations.id'), nullable=False)
     section = db.Column(db.String(20), nullable=False)
     claimed_amount = db.Column(db.Float, nullable=False)

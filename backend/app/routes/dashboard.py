@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app import db
+from extensions import db
 from app.models import User, Transaction, TaxCalculation, CibilScore, FinancialData
 from datetime import datetime, timedelta
 from sqlalchemy import func

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app import db
+from extensions import db
 from app.models import User, Transaction, CibilScore, FinancialData
 from utils.cibil_analyzer import CibilAnalyzer
 from datetime import datetime, timedelta
