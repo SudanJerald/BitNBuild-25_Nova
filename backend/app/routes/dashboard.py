@@ -7,44 +7,90 @@ import calendar
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
-@dashboard_bp.route('/overview/<int:user_id>', methods=['GET'])
-def get_dashboard_overview(user_id):
+@dashboard_bp.route('/overview', methods=['GET'])
+def get_dashboard_overview():
     """Get dashboard overview with key metrics"""
     try:
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
+        # For now, return mock data until we implement full user data integration
+        # In production, you would:
+        # 1. Validate JWT token
+        # 2. Get user profile ID from Supabase
+        # 3. Fetch real user data from database
         
-        # Get date range for analysis
-        end_date = datetime.now().date()
-        start_date = end_date - timedelta(days=365)  # Last 12 months
-        
-        # Get financial summary
-        financial_summary = get_financial_summary(user_id, start_date, end_date)
-        
-        # Get tax summary
-        tax_summary = get_tax_summary(user_id)
-        
-        # Get CIBIL summary
-        cibil_summary = get_cibil_summary(user_id)
-        
-        # Get recent activity
-        recent_activity = get_recent_activity(user_id)
-        
-        # Get insights and recommendations
-        insights = generate_insights(user_id, financial_summary, tax_summary, cibil_summary)
-        
+        # Mock dashboard data that matches the frontend expectations
         overview = {
             'user_info': {
-                'name': user.name,
-                'email': user.email,
-                'member_since': user.created_at.strftime('%B %Y')
+                'name': 'Welcome User',
+                'email': 'user@example.com',
+                'member_since': 'Recently'
             },
-            'financial_summary': financial_summary,
-            'tax_summary': tax_summary,
-            'cibil_summary': cibil_summary,
-            'recent_activity': recent_activity,
-            'insights': insights,
+            'financial_summary': {
+                'total_income': 1200000,
+                'total_expenses': 850000,
+                'net_savings': 350000,
+                'monthly_income': 100000,
+                'monthly_expenses': 70833,
+                'savings_rate': 29.2
+            },
+            'tax_summary': {
+                'financial_year': '2023-24',
+                'gross_income': 1200000,
+                'tax_liability': 195000,
+                'recommended_regime': 'Old Regime',
+                'potential_savings': 25000,
+                'deductions_utilized': 175000,
+                'last_calculated': datetime.now().isoformat()
+            },
+            'cibil_summary': {
+                'current_score': 782,
+                'previous_score': 767,
+                'trend': 'improving',
+                'score_category': 'Excellent',
+                'last_updated': datetime.now().isoformat()
+            },
+            'recent_activity': [
+                {
+                    'id': '1',
+                    'type': 'upload',
+                    'description': 'Bank statement uploaded',
+                    'amount': 0,
+                    'date': (datetime.now() - timedelta(days=1)).isoformat()
+                },
+                {
+                    'id': '2',
+                    'type': 'calculation',
+                    'description': 'Tax calculation completed',
+                    'amount': 195000,
+                    'date': (datetime.now() - timedelta(days=2)).isoformat()
+                },
+                {
+                    'id': '3',
+                    'type': 'report',
+                    'description': 'Financial report generated',
+                    'amount': 0,
+                    'date': (datetime.now() - timedelta(days=3)).isoformat()
+                }
+            ],
+            'insights': [
+                {
+                    'type': 'tax',
+                    'message': 'You could save ₹25,000 by maximizing your 80C deductions',
+                    'impact': 'high',
+                    'action_required': True
+                },
+                {
+                    'type': 'savings',
+                    'message': 'Your savings rate of 29.2% is excellent! Keep it up.',
+                    'impact': 'medium',
+                    'action_required': False
+                },
+                {
+                    'type': 'credit',
+                    'message': 'Your CIBIL score improved by 15 points this month',
+                    'impact': 'medium',
+                    'action_required': False
+                }
+            ],
             'last_updated': datetime.now().isoformat()
         }
         

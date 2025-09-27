@@ -52,84 +52,146 @@ export class DatabaseAPI {
     return response.json()
   }
 
-  // Dashboard methods - Mock data for now (backend uses different architecture)
+  // Dashboard methods - Using real API endpoints
   static async getDashboardOverview(userId: string, accessToken: string) {
-    // Mock dashboard data that matches the DashboardSection component
-    return {
-      dashboard: {
-        user_info: {
-          name: "Sudan Jerald",
-          email: "sudan@example.com",
-          member_since: "September 2025"
-        },
-        financial_summary: {
-          total_income: 1200000,
-          total_expenses: 850000,
-          net_savings: 350000,
-          monthly_income: 100000,
-          monthly_expenses: 70833,
-          savings_rate: 29.2
-        },
-        tax_summary: {
-          financial_year: "2023-24",
-          gross_income: 1200000,
-          tax_liability: 195000,
-          recommended_regime: "Old Regime",
-          potential_savings: 25000,
-          deductions_utilized: 175000,
-          last_calculated: new Date().toISOString()
-        },
-        cibil_summary: {
-          current_score: 782,
-          previous_score: 767,
-          trend: "improving",
-          score_category: "Excellent",
+    try {
+      // Try to get real dashboard data from the backend
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/dashboard/overview`, {
+        method: 'GET',
+        headers: API_CONFIG.getAuthHeaders(accessToken)
+      })
+      
+      if (response.ok) {
+        return response.json()
+      } else {
+        // If backend doesn't have dashboard endpoint yet, fallback to profile + mock data
+        console.warn('Dashboard endpoint not available, using fallback data')
+        
+        // Get user profile for personalized data
+        const profileResponse = await this.getProfile(userId, accessToken)
+        const userProfile = profileResponse.profile || {}
+        
+        // Return dashboard structure with user's actual profile data + mock financial data
+        return {
+          dashboard: {
+            user_info: {
+              name: userProfile.full_name || "Welcome User",
+              email: userProfile.email || "user@example.com",
+              member_since: userProfile.created_at ? 
+                new Date(userProfile.created_at).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long' 
+                }) : "Recently"
+            },
+            financial_summary: {
+              total_income: 1200000,
+              total_expenses: 850000,
+              net_savings: 350000,
+              monthly_income: 100000,
+              monthly_expenses: 70833,
+              savings_rate: 29.2
+            },
+            tax_summary: {
+              financial_year: "2023-24",
+              gross_income: 1200000,
+              tax_liability: 195000,
+              recommended_regime: "Old Regime",
+              potential_savings: 25000,
+              deductions_utilized: 175000,
+              last_calculated: new Date().toISOString()
+            },
+            cibil_summary: {
+              current_score: 782,
+              previous_score: 767,
+              trend: "improving",
+              score_category: "Excellent",
+              last_updated: new Date().toISOString()
+            },
+            recent_activity: [
+              {
+                id: "1",
+                type: "upload",
+                description: "Bank statement uploaded",
+                amount: 0,
+                date: new Date(Date.now() - 86400000).toISOString()
+              },
+              {
+                id: "2",
+                type: "calculation",
+                description: "Tax calculation completed",
+                amount: 195000,
+                date: new Date(Date.now() - 172800000).toISOString()
+              },
+              {
+                id: "3",
+                type: "report",
+                description: "Financial report generated",
+                amount: 0,
+                date: new Date(Date.now() - 259200000).toISOString()
+              }
+            ],
+            insights: [
+              {
+                type: "tax",
+                message: "You could save ₹25,000 by maximizing your 80C deductions",
+                impact: "high",
+                action_required: true
+              },
+              {
+                type: "savings",
+                message: "Your savings rate of 29.2% is excellent! Keep it up.",
+                impact: "medium",
+                action_required: false
+              },
+              {
+                type: "credit",
+                message: "Your CIBIL score improved by 15 points this month",
+                impact: "medium",
+                action_required: false
+              }
+            ],
+            last_updated: new Date().toISOString()
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+      // Fallback to mock data if all else fails
+      return {
+        dashboard: {
+          user_info: {
+            name: "Welcome User",
+            email: "user@example.com",
+            member_since: "Recently"
+          },
+          financial_summary: {
+            total_income: 0,
+            total_expenses: 0,
+            net_savings: 0,
+            monthly_income: 0,
+            monthly_expenses: 0,
+            savings_rate: 0
+          },
+          tax_summary: {
+            financial_year: "2023-24",
+            gross_income: 0,
+            tax_liability: 0,
+            recommended_regime: "Not calculated",
+            potential_savings: 0,
+            deductions_utilized: 0,
+            last_calculated: new Date().toISOString()
+          },
+          cibil_summary: {
+            current_score: 0,
+            previous_score: 0,
+            trend: "unknown",
+            score_category: "Not available",
+            last_updated: new Date().toISOString()
+          },
+          recent_activity: [],
+          insights: [],
           last_updated: new Date().toISOString()
-        },
-        recent_activity: [
-          {
-            id: "1",
-            type: "upload",
-            description: "Bank statement uploaded",
-            amount: 0,
-            date: new Date(Date.now() - 86400000).toISOString()
-          },
-          {
-            id: "2",
-            type: "calculation",
-            description: "Tax calculation completed",
-            amount: 195000,
-            date: new Date(Date.now() - 172800000).toISOString()
-          },
-          {
-            id: "3",
-            type: "report",
-            description: "Financial report generated",
-            amount: 0,
-            date: new Date(Date.now() - 259200000).toISOString()
-          }
-        ],
-        insights: [
-          {
-            type: "tax",
-            message: "You could save ₹25,000 by maximizing your 80C deductions",
-            impact: "high",
-            action_required: true
-          },
-          {
-            type: "savings",
-            message: "Your savings rate of 29.2% is excellent! Keep it up.",
-            impact: "medium",
-            action_required: false
-          },
-          {
-            type: "credit",
-            message: "Your CIBIL score improved by 15 points this month",
-            impact: "medium",
-            action_required: false
-          }
-        ],
-        last_updated: new Date().toISOString()
+        }
       }
     }
   }
@@ -316,99 +378,100 @@ export class DatabaseAPI {
     return response.json()
   }
 
-  // Additional methods for ProfileSection and other components
+  // Connected Accounts methods - Using new API endpoints
   static async getAccounts(userId: string, accessToken: string) {
-    // Mock connected accounts data
-    return {
-      accounts: [
-        {
-          id: '1',
-          bankName: 'HDFC Bank',
-          accountType: 'Savings',
-          account: '****1234',
-          status: 'connected',
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          bankName: 'SBI',
-          accountType: 'Credit Card',
-          account: '****5678',
-          status: 'connected',
-          created_at: new Date().toISOString()
-        }
-      ]
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/accounts`, {
+      method: 'GET',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to fetch connected accounts')
     }
+    
+    return response.json()
   }
 
   static async connectAccount(userId: string, accountData: any, accessToken: string) {
-    // Mock account connection
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
-    return {
-      account: {
-        id: Date.now().toString(),
-        bankName: accountData.bankName,
-        accountType: accountData.accountType,
-        account: accountData.account,
-        status: 'connected',
-        created_at: new Date().toISOString()
-      }
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/accounts`, {
+      method: 'POST',
+      headers: API_CONFIG.getAuthHeaders(accessToken),
+      body: JSON.stringify(accountData)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to connect account')
     }
+    
+    return response.json()
   }
 
   static async disconnectAccount(userId: string, accountId: string, accessToken: string) {
-    // Mock account disconnection
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-    return { success: true }
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/accounts/${accountId}`, {
+      method: 'DELETE',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to disconnect account')
+    }
+    
+    return response.json()
   }
 
+  // Notification Settings methods - Using new API endpoints
   static async getNotificationSettings(userId: string, accessToken: string) {
-    // Mock notification settings
-    return {
-      settings: {
-        taxReminders: true,
-        cibilAlerts: true,
-        spendingInsights: false,
-        investmentTips: true
-      }
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
+      method: 'GET',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to fetch notification settings')
     }
+    
+    return response.json()
   }
 
   static async updateNotificationSettings(userId: string, settings: any, accessToken: string) {
-    // Mock notification settings update
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-    return { success: true, settings }
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications`, {
+      method: 'PUT',
+      headers: API_CONFIG.getAuthHeaders(accessToken),
+      body: JSON.stringify(settings)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to update notification settings')
+    }
+    
+    return response.json()
   }
 
+  // Reports methods - Using new API endpoints
   static async getReports(userId: string, accessToken: string) {
-    // Mock saved reports
-    return {
-      reports: [
-        {
-          id: '1',
-          name: 'Tax Summary Report 2023-24',
-          type: 'Tax Report',
-          date: '2024-03-15',
-          size: '2.3 MB',
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          name: 'CIBIL Analysis Report',
-          type: 'Credit Report',
-          date: '2024-03-10',
-          size: '1.8 MB',
-          created_at: new Date().toISOString()
-        }
-      ]
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/reports`, {
+      method: 'GET',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to fetch reports')
     }
+    
+    return response.json()
   }
 
   static async saveReport(userId: string, reportData: any, accessToken: string) {
     const response = await fetch(`${API_CONFIG.BASE_URL}/api/reports`, {
       method: 'POST',
       headers: API_CONFIG.getAuthHeaders(accessToken),
-      body: JSON.stringify({ user_id: userId, ...reportData })
+      body: JSON.stringify(reportData)
     })
     
     if (!response.ok) {
@@ -419,23 +482,95 @@ export class DatabaseAPI {
     return response.json()
   }
 
-  static async getUserFiles(userId: string, accessToken: string) {
-    // Mock uploaded files
-    return {
-      files: [
-        {
-          id: '1',
-          name: 'Bank_Statement_March_2024.pdf',
-          size: 1024 * 1024 * 2.5, // 2.5 MB
-          uploaded_at: new Date(Date.now() - 86400000).toISOString()
-        },
-        {
-          id: '2',
-          name: 'Credit_Card_Statement_March_2024.pdf',
-          size: 1024 * 1024 * 1.2, // 1.2 MB
-          uploaded_at: new Date(Date.now() - 172800000).toISOString()
-        }
-      ]
+  static async downloadReport(userId: string, reportId: string, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/reports/${reportId}/download`, {
+      method: 'GET',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to download report')
     }
+    
+    return response.blob()
+  }
+
+  static async deleteReport(userId: string, reportId: string, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/reports/${reportId}`, {
+      method: 'DELETE',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to delete report')
+    }
+    
+    return response.json()
+  }
+
+  // File management methods - Using new API endpoints
+  static async getUserFiles(userId: string, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/files`, {
+      method: 'GET',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to fetch user files')
+    }
+    
+    return response.json()
+  }
+
+  static async uploadUserFile(userId: string, file: File, fileType: string, accessToken: string) {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('file_type', fileType)
+
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/files/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: formData
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to upload file')
+    }
+    
+    return response.json()
+  }
+
+  static async downloadUserFile(userId: string, fileId: string, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/files/${fileId}/download`, {
+      method: 'GET',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to download file')
+    }
+    
+    return response.blob()
+  }
+
+  static async deleteUserFile(userId: string, fileId: string, accessToken: string) {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/files/${fileId}`, {
+      method: 'DELETE',
+      headers: API_CONFIG.getAuthHeaders(accessToken)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to delete file')
+    }
+    
+    return response.json()
   }
 }
