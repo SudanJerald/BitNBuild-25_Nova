@@ -3,7 +3,7 @@ import { Menu, X, Sparkles, LogOut } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 
 interface NavigationProps {
   isLoggedIn: boolean;
@@ -83,10 +83,9 @@ export function Navigation({ isLoggedIn, onLoginClick, onDemoClick }: Navigation
                 onClick={() => scrollToSection(item.href)}
                 className="text-wine/70 hover:text-wine transition-colors duration-200 relative"
                 whileHover={{ y: -2 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
+                transition={{ delay: index * 0.1, duration: 0.5, type: "spring", stiffness: 400, damping: 10 }}
               >
                 {item.label}
                 <motion.div

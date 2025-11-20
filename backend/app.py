@@ -32,12 +32,39 @@ def create_app():
     from app.routes.tax_calculation import tax_bp
     from app.routes.cibil_analysis import cibil_bp
     from app.routes.dashboard import dashboard_bp
+    from app.routes.profile import profile_bp
+    from app.routes.accounts import accounts_bp
+    from app.routes.notifications import notifications_bp
+    from app.routes.reports import reports_bp
+    from app.routes.files import files_bp
+    from app.routes.file_processing import file_processing_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(data_bp, url_prefix='/api/data')
     app.register_blueprint(tax_bp, url_prefix='/api/tax')
     app.register_blueprint(cibil_bp, url_prefix='/api/cibil')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
+    app.register_blueprint(profile_bp, url_prefix='/api/auth')
+    app.register_blueprint(accounts_bp, url_prefix='/api')
+    app.register_blueprint(notifications_bp, url_prefix='/api')
+    app.register_blueprint(reports_bp, url_prefix='/api')
+    app.register_blueprint(files_bp, url_prefix='/api')
+    app.register_blueprint(file_processing_bp, url_prefix='/api')
+    
+    # Root endpoint
+    @app.route('/')
+    def index():
+        return {
+            'message': 'TaxWise API Server',
+            'status': 'running',
+            'version': '1.0.0',
+            'endpoints': {
+                'health': '/health',
+                'api_docs': '/api/docs',
+                'auth': '/api/auth',
+                'frontend': 'http://localhost:3000'
+            }
+        }
     
     # Health check endpoint
     @app.route('/health')
