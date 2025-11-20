@@ -37,6 +37,7 @@ def create_app():
     from app.routes.notifications import notifications_bp
     from app.routes.reports import reports_bp
     from app.routes.files import files_bp
+    from app.routes.file_processing import file_processing_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(data_bp, url_prefix='/api/data')
@@ -48,6 +49,22 @@ def create_app():
     app.register_blueprint(notifications_bp, url_prefix='/api')
     app.register_blueprint(reports_bp, url_prefix='/api')
     app.register_blueprint(files_bp, url_prefix='/api')
+    app.register_blueprint(file_processing_bp, url_prefix='/api')
+    
+    # Root endpoint
+    @app.route('/')
+    def index():
+        return {
+            'message': 'TaxWise API Server',
+            'status': 'running',
+            'version': '1.0.0',
+            'endpoints': {
+                'health': '/health',
+                'api_docs': '/api/docs',
+                'auth': '/api/auth',
+                'frontend': 'http://localhost:3000'
+            }
+        }
     
     # Health check endpoint
     @app.route('/health')

@@ -22,8 +22,14 @@ class SupabaseManager:
         
         # Create service client for admin operations (if service key is available)
         if self.service_key:
-            self.service_client: Client = create_client(self.url, self.service_key)
+            try:
+                self.service_client: Client = create_client(self.url, self.service_key)
+                print(f"✅ Service client created with service key ending in: ...{self.service_key[-10:]}")
+            except Exception as e:
+                print(f"❌ Error creating service client: {e}")
+                self.service_client = self.client
         else:
+            print("⚠️  No service key found, using regular client")
             self.service_client = self.client
 
     def test_connection(self) -> bool:
@@ -46,32 +52,60 @@ class SupabaseManager:
     def create_user_profile(self, user_id: str, profile_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a user profile in Supabase"""
         try:
-            profile_data['id'] = user_id
-            profile_data['created_at'] = 'now()'
+            # Prepare profile data with auth_id instead of id
+            insert_data = {
+                'auth_id': user_id,  # Use auth_id to link to auth.users
+                'email': profile_data.get('email', ''),
+                'name': profile_data.get('name', ''),
+                'phone': profile_data.get('phone', ''),
+                'pan': profile_data.get('pan', '')
+            }
             
-            response = self.service_client.table('user_profiles').insert(profile_data).execute()
-            return {'success': True, 'profile': response.data[0]}
+            # Remove empty values
+            insert_data = {k: v for k, v in insert_data.items() if v}
+            
+            print(f"🔍 Attempting to create profile for user {user_id}")
+            print(f"📝 Profile data: {insert_data}")
+            
+            # Use service client for admin operations (bypasses RLS)
+            response = self.service_client.table('user_profiles').insert(insert_data).execute()
+            
+            print(f"✅ Profile created successfully: {response.data}")
+            
+            if response.data and len(response.data) > 0:
+                return {'success': True, 'profile': response.data[0]}
+            else:
+                return {'success': False, 'error': 'No data returned from insert'}
         except Exception as e:
+            import traceback
+            print(f"❌ Error creating user profile: {e}")
+            print(f"📋 Full traceback: {traceback.format_exc()}")
             return {'success': False, 'error': str(e)}
 
     def get_user_profile(self, user_id: str) -> Dict[str, Any]:
         """Get user profile from Supabase"""
         try:
-            response = self.client.table('user_profiles').select('*').eq('id', user_id).execute()
-            if response.data:
+            # Query by auth_id since that's what links to auth.users
+            response = self.client.table('user_profiles').select('*').eq('auth_id', user_id).execute()
+            if response.data and len(response.data) > 0:
                 return {'success': True, 'profile': response.data[0]}
             else:
                 return {'success': False, 'error': 'Profile not found'}
         except Exception as e:
+            print(f"❌ Error getting user profile: {e}")
             return {'success': False, 'error': str(e)}
 
     def update_user_profile(self, user_id: str, profile_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update user profile in Supabase"""
         try:
-            profile_data['updated_at'] = 'now()'
-            response = self.client.table('user_profiles').update(profile_data).eq('id', user_id).execute()
-            return {'success': True, 'profile': response.data[0]}
+            # Query by auth_id since that's what links to auth.users
+            response = self.client.table('user_profiles').update(profile_data).eq('auth_id', user_id).execute()
+            if response.data and len(response.data) > 0:
+                return {'success': True, 'profile': response.data[0]}
+            else:
+                return {'success': False, 'error': 'Profile not found or not updated'}
         except Exception as e:
+            print(f"❌ Error updating user profile: {e}")
             return {'success': False, 'error': str(e)}
 
     # File Management
@@ -199,7 +233,8 @@ class SupabaseManager:
                 'user_files', 
                 'connected_accounts',
                 'user_reports',
-                'notification_settings'
+                'notification_settings',
+                'transactions'
             ]
             
             existing_tables = []

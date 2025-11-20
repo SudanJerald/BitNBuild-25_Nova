@@ -7,6 +7,11 @@ from supabase_client import get_supabase_manager
 import re
 import logging
 import os
+import sys
+
+# Add parent directory to path to import local_auth
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+import local_auth
 
 logger = logging.getLogger(__name__)
 
@@ -380,7 +385,12 @@ def confirm_email():
                     'pan': user_metadata.get('pan', '')
                 }
                 
+                # Try to create profile, but don't fail if it doesn't work
                 profile_result = supabase_manager.create_user_profile(response.user.id, profile_data)
+                
+                if not profile_result.get('success'):
+                    logger.warning(f"Profile creation failed: {profile_result.get('error')}")
+                    # Continue anyway - profile can be created later
                 
                 return jsonify({
                     'success': True,
@@ -389,7 +399,7 @@ def confirm_email():
                         'id': response.user.id,
                         'email': response.user.email,
                         'email_confirmed': True,
-                        'profile': profile_result.get('profile', {})
+                        'profile': profile_result.get('profile', {}) if profile_result.get('success') else {}
                     },
                     'session': {
                         'access_token': response.session.access_token,
@@ -519,7 +529,12 @@ def register_dev():
                     'pan': data.get('pan', '').strip().upper()
                 }
                 
+                # Try to create profile, but don't fail registration if it doesn't work
                 profile_result = supabase_manager.create_user_profile(response.user.id, profile_data)
+                
+                if not profile_result.get('success'):
+                    logger.warning(f"Profile creation failed during dev registration: {profile_result.get('error')}")
+                    # Continue anyway - user can still login
                 
                 return jsonify({
                     'success': True,
@@ -528,7 +543,8 @@ def register_dev():
                         'id': response.user.id,
                         'email': response.user.email,
                         'name': name,
-                        'email_confirmed': True
+                        'email_confirmed': True,
+                        'profile_created': profile_result.get('success', False)
                     },
                     'requires_verification': False
                 }), 201
@@ -595,3 +611,176 @@ def verify_token():
             'valid': False,
             'error': 'Invalid token'
         }), 401
+
+# LOCAL AUTHENTICATION ENDPOINTS (Fallback when Supabase has issues)
+
+@auth_bp.route('/local/register', methods=['POST'])
+def local_register():
+    """Register user with local SQLite database"""
+    try:
+        data = request.get_json()
+        
+        if not data or not data.get('email') or not data.get('password'):
+            return jsonify({
+                'success': False,
+                'error': 'Email and password are required'
+            }), 400
+        
+        email = data['email'].lower().strip()
+        password = data['password']
+        name = data.get('name', '').strip()
+        phone = data.get('phone', '').strip()
+        pan = data.get('pan', '').strip().upper()
+        
+        # Validate email
+        if not validate_email(email):
+            return jsonify({
+                'success': False,
+                'error': 'Invalid email format'
+            }), 400
+        
+        # Validate password
+        if len(password) < 6:
+            return jsonify({
+                'success': False,
+                'error': 'Password must be at least 6 characters'
+            }), 400
+        
+        # Register with local auth
+        result = local_auth.register_user(email, password, name, phone, pan)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': 'Registration successful! You can now login.',
+                'user': result['user']
+            }), 201
+        else:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Local registration error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Registration failed'
+        }), 500
+
+@auth_bp.route('/local/login', methods=['POST'])
+def local_login():
+    """Login with local SQLite database"""
+    try:
+        data = request.get_json()
+        
+        if not data or not data.get('email') or not data.get('password'):
+            return jsonify({
+                'success': False,
+                'error': 'Email and password are required'
+            }), 400
+        
+        email = data['email'].lower().strip()
+        password = data['password']
+        
+        # Login with local auth
+        result = local_auth.login_user(email, password)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': 'Login successful',
+                'user': result['user'],
+                'session': result['session']
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            }), 401
+            
+    except Exception as e:
+        logger.error(f"Local login error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Login failed'
+        }), 500
+
+@auth_bp.route('/local/profile', methods=['GET'])
+def local_get_profile():
+    """Get user profile from local database"""
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({
+                'success': False,
+                'error': 'No authorization token'
+            }), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user
+        result = local_auth.verify_token(token)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'profile': result['user']
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            }), 401
+            
+    except Exception as e:
+        logger.error(f"Get profile error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get profile'
+        }), 500
+
+@auth_bp.route('/local/profile', methods=['PUT'])
+def local_update_profile():
+    """Update user profile in local database"""
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({
+                'success': False,
+                'error': 'No authorization token'
+            }), 401
+        
+        token = auth_header.split(' ')[1]
+        data = request.get_json()
+        
+        # Verify token and get user
+        verify_result = local_auth.verify_token(token)
+        
+        if not verify_result['success']:
+            return jsonify({
+                'success': False,
+                'error': verify_result['error']
+            }), 401
+        
+        # Update profile
+        result = local_auth.update_user_profile(verify_result['user']['id'], data)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': 'Profile updated successfully',
+                'profile': result['profile']
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': result['error']
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Update profile error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to update profile'
+        }), 500

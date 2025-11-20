@@ -97,10 +97,11 @@ class FileProcessor:
         # Common column mappings
         column_mappings = {
             'date': ['date', 'transaction_date', 'txn_date', 'Date', 'DATE'],
-            'description': ['description', 'narration', 'particulars', 'Details', 'DESCRIPTION'],
+            'description': ['description', 'narration', 'particulars', 'Details', 'DESCRIPTION', 'Description'],
             'amount': ['amount', 'Amount', 'AMOUNT'],
             'debit': ['debit', 'withdrawal', 'dr', 'Debit', 'DEBIT'],
             'credit': ['credit', 'deposit', 'cr', 'Credit', 'CREDIT'],
+            'type': ['type', 'Type', 'TYPE', 'transaction_type'],
             'balance': ['balance', 'closing_balance', 'Balance', 'BALANCE']
         }
         
@@ -144,15 +145,24 @@ class FileProcessor:
             amount = 0
             transaction_type = 'debit'
             
+            # Check if we have a type column first
+            type_col = columns.get('type')
+            if type_col and not pd.isna(row[type_col]):
+                transaction_type = str(row[type_col]).strip().lower()
+            
             if columns.get('amount'):
                 # Single amount column
                 amount = self._parse_amount(row[columns['amount']])
-                # Determine type based on sign or other indicators
-                if amount < 0:
-                    transaction_type = 'debit'
-                    amount = abs(amount)
+                # If no type column, determine type based on sign or other indicators
+                if not type_col:
+                    if amount < 0:
+                        transaction_type = 'debit'
+                        amount = abs(amount)
+                    else:
+                        transaction_type = 'credit'
                 else:
-                    transaction_type = 'credit'
+                    # Make amount positive for consistency
+                    amount = abs(amount)
             else:
                 # Separate debit/credit columns
                 debit_col = columns.get('debit')
